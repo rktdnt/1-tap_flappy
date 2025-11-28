@@ -1,403 +1,418 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Flappy Shape</title>
+  <meta charset="utf-8" />
+  <title>Flappy Shape - Full Features</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:#111;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#fff;
     }
-    body {
-      background: #222;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+    #gameContainer{position:relative;width:100%;max-width:480px}
+    canvas{
+      width:100%;
+      height:auto;
+      background:linear-gradient(#4d9fff,#88ddff);
+      border-radius:12px;
+      display:block;
+      box-shadow:0 8px 30px rgba(0,0,0,0.5);
     }
-    #gameContainer {
-      position: relative;
+    #overlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      transition:opacity 200ms ease;
+      pointer-events:none;
     }
-    canvas {
-      background: linear-gradient(#4d9fff, #88ddff);
-      border: 2px solid #fff;
-      border-radius: 10px;
-      display: block;
+    #info{
+      position:absolute;
+      top:8px;
+      left:8px;
+      right:8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:14px;
+      gap:12px;
     }
-    #overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      pointer-events: none;
+    .shape-preview{
+      width:30px;
+      height:30px;
+      background-size:cover;
+      background-position:center;
+      border-radius:6px;
+      border:2px solid rgba(0,0,0,0.4);
     }
-    #info {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      right: 8px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      text-shadow: 0 0 4px rgba(0,0,0,0.5);
+    .mobile-controls{
+      position:absolute;
+      bottom:14px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      gap:8px;
+      pointer-events:auto;
     }
-    #controls {
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
-      opacity: 0.8;
-      text-align: center;
-      max-width: 90%;
+    .btn{
+      background:rgba(255,255,255,0.12);
+      border:2px solid rgba(255,255,255,0.18);
+      padding:8px 12px;
+      border-radius:10px;
+      color:#fff;
+      font-weight:600;
+      user-select:none;
+      box-shadow:0 6px 18px rgba(0,0,0,0.35);
     }
+    .btn:active{transform:translateY(2px)}
+    .difficulty-info{font-size:12px;opacity:0.9}
+    .hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:12px;opacity:0.8}
+    @media (max-width:420px){ .shape-preview{width:34px;height:34px} .btn{padding:10px 14px} }
   </style>
 </head>
 <body>
   <div id="gameContainer">
     <canvas id="game" width="480" height="640"></canvas>
+
     <div id="overlay">
       <h1 id="titleText">Flappy Shape</h1>
-      <p id="subText">Tekan SPASI atau TAP untuk mulai<br/>1 = Bulat · 2 = Kotak · 3 = Segitiga</p>
+      <p id="subText">Tekan SPASI / TAP untuk mulai — 1/2/3 ganti gambar</p>
     </div>
+
     <div id="info">
-      <div>Skor: <span id="scoreText">0</span></div>
-      <div>Bentuk: <span id="shapeText">Bulat</span></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-start">
+        <div>Skor: <span id="scoreText">0</span></div>
+        <div class="difficulty-info">Gap: <span id="gapText">-</span> px · Speed: <span id="speedText">-</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div>Bentuk:</div>
+        <div id="shapePreview" class="shape-preview" title="Preview"></div>
+      </div>
     </div>
-    <div id="controls">
-      Kontrol: SPASI / TAP untuk lompat · 1/2/3 ganti bentuk · ENTER restart
+
+    <div class="mobile-controls" id="mobileControls" style="display:none">
+      <div class="btn" id="btnFlap">FLAP</div>
+      <div class="btn" id="btn1">1</div>
+      <div class="btn" id="btn2">2</div>
+      <div class="btn" id="btn3">3</div>
     </div>
+
   </div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+<script>
+/* ========= CONFIG =========
+   - support foto lokal: sesuaikan path jika perlu
+   - dynamic difficulty values di bawah dapat di-tweak
+*/
+const localImages = {
+  circle: 'local/1.jpg',
+  square: 'local/2.jpg',
+  triangle: 'local/3.jpg'
+};
 
-    const overlay = document.getElementById("overlay");
-    const titleText = document.getElementById("titleText");
-    const subText = document.getElementById("subText");
-    const scoreText = document.getElementById("scoreText");
-    const shapeText = document.getElementById("shapeText");
+const difficultyConfig = {
+  initialGap: 280,           // gap awal (px)
+  minGap: 180,               // gap minimal (px)
+  shrinkPerSecond: 5.0,      // gap mengecil per detik
+  shrinkPerScore: 2.0,       // tambahan pengecilan per skor
+  basePipeSpeed: 2.6,        // kecepatan pipa awal
+  maxPipeSpeed: 6.0,         // kecepatan maksimal
+  speedIncreasePerScore: 0.12, // kecepatan naik per skor
+  basePipeSpacing: 340,      // jarak awal antar pipa
+  minPipeSpacing: 220,       // jarak minimal antar pipa
+  spacingDecreasePerScore: 1.5 // pengurangan spacing per skor
+};
 
-    const W = canvas.width;
-    const H = canvas.height;
+/* fallback svg data-url jika foto tidak ada */
+function svgToDataURL(svg){ return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg); }
+const fallback = {
+  circle: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><circle cx='64' cy='64' r='44' fill='#ffe066' stroke='#000' stroke-width='4'/></svg>"),
+  square: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect x='28' y='28' width='72' height='72' rx='8' fill='#ff6b6b' stroke='#000' stroke-width='4'/></svg>"),
+  triangle: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 24 L28 100 L100 100 Z' fill='#4ecdc4' stroke='#000' stroke-width='4'/></svg>")
+};
 
-    // Player
-    const player = {
-      x: 100,
-      y: H / 2,
-      radius: 18,
-      vy: 0,
-      gravity: 0.45,
-      flapStrength: -8.5,
-      shape: "circle" // circle | square | triangle
-    };
+/* load sprites (2 frame placeholders each; photos duplicated) */
+const sprites = {
+  circle: [ new Image(), new Image() ],
+  square: [ new Image(), new Image() ],
+  triangle: [ new Image(), new Image() ]
+};
+/* attempt load local images, fallback to svg if fail */
+Object.keys(localImages).forEach(shape=>{
+  const path = localImages[shape];
+  const img = new Image();
+  img.onload = ()=>{ sprites[shape][0] = img; sprites[shape][1] = img; if(player.shape===shape) updatePreview(); };
+  img.onerror = ()=>{ sprites[shape][0].src = fallback[shape]; sprites[shape][1].src = fallback[shape]; if(player.shape===shape) updatePreview(); };
+  img.src = path;
+});
 
-    // Pipes (obstacles)
-    const pipes = [];
-    const pipeWidth = 70;
-    const gapHeight = 150;
-    const pipeSpacing = 260;
-    const pipeSpeed = 3;
+/* ======== GAME CORE ======== */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-    let lastPipeX = W;
-    const shapes = ["circle", "square", "triangle"];
+const overlay = document.getElementById('overlay');
+const scoreText = document.getElementById('scoreText');
+const gapText = document.getElementById('gapText');
+const speedText = document.getElementById('speedText');
+const shapePreview = document.getElementById('shapePreview');
 
-    let score = 0;
-    let gameRunning = false;
-    let gameOver = false;
+const W = canvas.width, H = canvas.height;
+const shapes = ['circle','square','triangle'];
 
-    function resetGame() {
-      player.y = H / 2;
-      player.vy = 0;
-      player.shape = "circle";
-      score = 0;
-      pipes.length = 0;
-      lastPipeX = W + 200;
-      scoreText.textContent = score;
-      updateShapeText();
-      gameOver = false;
-      gameRunning = false;
-      overlay.style.pointerEvents = "none";
-      titleText.textContent = "Flappy Shape";
-      subText.innerHTML = "Tekan SPASI atau TAP untuk mulai<br/>1 = Bulat · 2 = Kotak · 3 = Segitiga";
-      overlay.style.opacity = 1;
+const player = {
+  x: 100,
+  y: H/2,
+  radius: 36,
+  vy: 0,
+  gravity: 0.45,
+  flapStrength: -9.2,
+  shape: 'circle'
+};
+
+let score = 0;
+let pipes = [];
+const pipeWidth = 70;
+
+let gameRunning = false;
+let gameOver = false;
+let animTimer = 0;
+let lastAnimTime = performance.now();
+let gameStartTimestamp = null;
+
+/* preview update */
+function updatePreview(){
+  const img = sprites[player.shape][0];
+  if(img && img.src) {
+    shapePreview.style.backgroundImage = `url("${img.src}")`;
+    shapePreview.style.backgroundSize = 'cover';
+    shapePreview.style.backgroundPosition = 'center';
+  }
+}
+
+/* dynamic difficulty calculations */
+function computeCurrentGap(){
+  if(!gameStartTimestamp) return difficultyConfig.initialGap;
+  const elapsed = (performance.now() - gameStartTimestamp)/1000;
+  let gap = difficultyConfig.initialGap - difficultyConfig.shrinkPerSecond*elapsed - difficultyConfig.shrinkPerScore*score;
+  if(gap < difficultyConfig.minGap) gap = difficultyConfig.minGap;
+  return Math.round(gap);
+}
+function computeCurrentPipeSpeed(){
+  let speed = difficultyConfig.basePipeSpeed + score * difficultyConfig.speedIncreasePerScore;
+  if(speed > difficultyConfig.maxPipeSpeed) speed = difficultyConfig.maxPipeSpeed;
+  return parseFloat(speed.toFixed(3));
+}
+function computeCurrentSpacing(){
+  let spacing = difficultyConfig.basePipeSpacing - score * difficultyConfig.spacingDecreasePerScore;
+  if(spacing < difficultyConfig.minPipeSpacing) spacing = difficultyConfig.minPipeSpacing;
+  return Math.round(spacing);
+}
+function updateDifficultyUI(){
+  gapText.textContent = computeCurrentGap();
+  speedText.textContent = computeCurrentPipeSpeed();
+}
+
+/* spawn pipe using current gap */
+function spawnPipe(){
+  const gap = computeCurrentGap();
+  const margin = 60;
+  const gapY = margin + Math.random()*(H - 2*margin - gap);
+  pipes.push({ x: W + 40, gapY, gapHeight: gap, passed: false });
+}
+
+/* start / flap */
+function flap(){
+  if(!gameRunning && !gameOver){
+    gameRunning = true;
+    overlay.style.display = 'none';
+    gameStartTimestamp = performance.now();
+  }
+  if(!gameOver) player.vy = player.flapStrength;
+}
+
+/* random shape (avoid same) */
+function randomShape(){
+  let s;
+  do s = shapes[Math.floor(Math.random()*shapes.length)];
+  while(s === player.shape);
+  return s;
+}
+
+/* game over */
+function triggerGameOver(){
+  if(gameOver) return;
+  gameOver = true;
+  gameRunning = false;
+  overlay.style.display = 'flex';
+  overlay.style.opacity = 1;
+  document.getElementById('titleText').textContent = 'Game Over';
+  document.getElementById('subText').innerHTML = `Skor kamu: ${score}<br>Tekan ENTER untuk restart`;
+}
+
+/* main update loop */
+function update(now){
+  const dt = now - lastAnimTime;
+  lastAnimTime = now;
+  animTimer += dt;
+
+  if(gameRunning && !gameOver){
+    player.vy += player.gravity;
+    player.y += player.vy;
+
+    // bounds
+    if(player.y - player.radius < 0 || player.y + player.radius > H - 60){
+      triggerGameOver();
     }
 
-    function spawnPipe() {
-      const margin = 80;
-      const gapY = margin + Math.random() * (H - 2 * margin - gapHeight);
-      const requiredShape = shapes[Math.floor(Math.random() * shapes.length)];
-      pipes.push({
-        x: W + 50,
-        gapY,
-        gapHeight,
-        requiredShape,
-        passed: false
-      });
+    // spawn based on dynamic spacing
+    const currentSpacing = computeCurrentSpacing();
+    if(pipes.length === 0 || (W - pipes[pipes.length-1].x) >= currentSpacing){
+      spawnPipe();
     }
 
-    function flap() {
-      if (!gameRunning && !gameOver) {
-        gameRunning = true;
-        overlay.style.opacity = 0;
-      }
-      if (!gameOver) {
-        player.vy = player.flapStrength;
-      }
-    }
+    // move pipes with dynamic speed
+    const currentSpeed = computeCurrentPipeSpeed();
+    for(let i = pipes.length-1; i>=0; i--){
+      const p = pipes[i];
+      p.x -= currentSpeed;
 
-    function changeShape(shapeIndex) {
-      if (shapeIndex < 0 || shapeIndex >= shapes.length) return;
-      player.shape = shapes[shapeIndex];
-      updateShapeText();
-    }
-
-    function updateShapeText() {
-      switch (player.shape) {
-        case "circle":
-          shapeText.textContent = "Bulat";
-          break;
-        case "square":
-          shapeText.textContent = "Kotak";
-          break;
-        case "triangle":
-          shapeText.textContent = "Segitiga";
-          break;
-      }
-    }
-
-    function update() {
-      if (gameRunning && !gameOver) {
-        // Physics
-        player.vy += player.gravity;
-        player.y += player.vy;
-
-        // Boundaries
-        if (player.y - player.radius < 0 || player.y + player.radius > H) {
+      const withinX = (player.x + player.radius > p.x) && (player.x - player.radius < p.x + pipeWidth);
+      if(withinX){
+        const inGap = (player.y - player.radius >= p.gapY) && (player.y + player.radius <= p.gapY + p.gapHeight);
+        if(!inGap){
           triggerGameOver();
-        }
+        } else {
+          if(!p.passed){
+            p.passed = true;
+            score++;
+            scoreText.textContent = score;
 
-        // Pipes logic
-        if (pipes.length === 0 || lastPipeX - pipes[pipes.length - 1].x >= pipeSpacing) {
-          spawnPipe();
-        }
-
-        // Move and check pipes
-        for (let i = pipes.length - 1; i >= 0; i--) {
-          const p = pipes[i];
-          p.x -= pipeSpeed;
-
-          // Collision check
-          const withinX =
-            player.x + player.radius > p.x &&
-            player.x - player.radius < p.x + pipeWidth;
-
-          if (withinX) {
-            const inGap =
-              player.y - player.radius > p.gapY &&
-              player.y + player.radius < p.gapY + p.gapHeight;
-
-            // Kalau tidak di area gap → nabrak
-            if (!inGap) {
-              triggerGameOver();
-            } else {
-              // Di gap tapi bentuk salah → dianggap nabrak juga
-              if (player.shape !== p.requiredShape) {
-                triggerGameOver();
-              } else if (!p.passed) {
-                // Di gap & bentuk benar → tambah skor
-                p.passed = true;
-                score++;
-                scoreText.textContent = score;
-              }
-            }
-          }
-
-          // Hapus pipe yang sudah lewat layar
-          if (p.x + pipeWidth < 0) {
-            pipes.splice(i, 1);
+            // auto-random shape after passing
+            player.shape = randomShape();
+            updatePreview();
           }
         }
       }
 
-      draw();
-      requestAnimationFrame(update);
+      if(p.x + pipeWidth < -50) pipes.splice(i,1);
     }
 
-    function triggerGameOver() {
-      if (gameOver) return;
-      gameOver = true;
-      gameRunning = false;
-      overlay.style.opacity = 1;
-      titleText.textContent = "Game Over";
-      subText.innerHTML = `Skor kamu: ${score}<br/>Tekan ENTER untuk restart`;
+    updateDifficultyUI();
+  }
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+/* draw helpers */
+function drawBackground(){
+  ctx.fillStyle = "#27ae60";
+  ctx.fillRect(0, H-60, W, 60);
+  ctx.fillStyle = "#2ecc71";
+  ctx.fillRect(0, H-55, W, 55);
+
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  for(let i=0;i<3;i++){
+    const baseX = (Date.now()/40 + i*200) % (W + 150) - 75;
+    const baseY = 80 + i*50;
+    ctx.beginPath();
+    ctx.arc(baseX, baseY, 26, 0, Math.PI*2);
+    ctx.arc(baseX+28, baseY-12, 22, 0, Math.PI*2);
+    ctx.arc(baseX-28, baseY-12, 22, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawPlayer(){
+  ctx.save();
+  ctx.translate(player.x, player.y);
+
+  const frameIndex = Math.floor((animTimer/140) % 2);
+  const img = sprites[player.shape][frameIndex];
+  const size = player.radius * 2;
+
+  if(img && img.complete && img.naturalWidth !== 0){
+    ctx.drawImage(img, -size/2, -size/2, size, size);
+  } else {
+    // fallback simple shape
+    ctx.fillStyle = player.shape === 'circle' ? '#ffe066' : player.shape === 'square' ? '#ff6b6b' : '#4ecdc4';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    if(player.shape === 'circle'){
+      ctx.beginPath(); ctx.arc(0,0,player.radius,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'square'){
+      const s = player.radius*1.6; ctx.beginPath(); ctx.rect(-s/2,-s/2,s,s); ctx.fill(); ctx.stroke();
+    } else {
+      const s = player.radius*2; ctx.beginPath(); ctx.moveTo(-s/2,s/2); ctx.lineTo(0,-s/2); ctx.lineTo(s/2,s/2); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
+  }
 
-    function drawPlayer() {
-      ctx.save();
-      ctx.translate(player.x, player.y);
+  ctx.restore();
+}
 
-      // Body outline
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#000";
+function drawPipe(p){
+  ctx.fillStyle = "#2ecc71";
+  ctx.fillRect(p.x, 0, pipeWidth, p.gapY);
+  ctx.fillRect(p.x, p.gapY + p.gapHeight, pipeWidth, H - (p.gapY + p.gapHeight));
+  ctx.save();
+  ctx.translate(p.x + pipeWidth/2, p.gapY + p.gapHeight/2);
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillRect(-pipeWidth/2, -p.gapHeight/2, pipeWidth, p.gapHeight);
+  ctx.restore();
+}
 
-      if (player.shape === "circle") {
-        ctx.fillStyle = "#ffe066";
-        ctx.beginPath();
-        ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      } else if (player.shape === "square") {
-        ctx.fillStyle = "#ff6b6b";
-        const size = player.radius * 2 * 0.9;
-        ctx.beginPath();
-        ctx.rect(-size / 2, -size / 2, size, size);
-        ctx.fill();
-        ctx.stroke();
-      } else if (player.shape === "triangle") {
-        ctx.fillStyle = "#4ecdc4";
-        const size = player.radius * 2;
-        ctx.beginPath();
-        ctx.moveTo(-size / 2, size / 2);
-        ctx.lineTo(0, -size / 2);
-        ctx.lineTo(size / 2, size / 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+  pipes.forEach(drawPipe);
+  drawPlayer();
+}
 
-      // Simple eye
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(player.radius / 4, -player.radius / 4, 3, 0, Math.PI * 2);
-      ctx.fill();
+/* inputs */
+window.addEventListener('keydown', (e)=>{
+  if(e.code === 'Space'){ e.preventDefault(); flap(); }
+  else if(e.code === 'Digit1'){ player.shape = 'circle'; updatePreview(); }
+  else if(e.code === 'Digit2'){ player.shape = 'square'; updatePreview(); }
+  else if(e.code === 'Digit3'){ player.shape = 'triangle'; updatePreview(); }
+  else if(e.code === 'Enter'){ if(gameOver) location.reload(); }
+});
+canvas.addEventListener('mousedown', flap);
+canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); }, {passive:false});
 
-      ctx.restore();
-    }
+/* mobile buttons */
+const mobileControls = document.getElementById('mobileControls');
+const btnFlap = document.getElementById('btnFlap');
+const btn1 = document.getElementById('btn1');
+const btn2 = document.getElementById('btn2');
+const btn3 = document.getElementById('btn3');
 
-    function drawPipe(p) {
-      ctx.fillStyle = "#2ecc71";
-      ctx.strokeStyle = "#1e6e3b";
-      ctx.lineWidth = 2;
+btnFlap.addEventListener('click', flap);
+btn1.addEventListener('click', ()=>{ player.shape='circle'; updatePreview(); });
+btn2.addEventListener('click', ()=>{ player.shape='square'; updatePreview(); });
+btn3.addEventListener('click', ()=>{ player.shape='triangle'; updatePreview(); });
 
-      // Top pipe
-      ctx.beginPath();
-      ctx.rect(p.x, 0, pipeWidth, p.gapY);
-      ctx.fill();
-      ctx.stroke();
+btnFlap.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); }, {passive:false});
+btn1.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='circle'; updatePreview(); }, {passive:false});
+btn2.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='square'; updatePreview(); }, {passive:false});
+btn3.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='triangle'; updatePreview(); }, {passive:false});
 
-      // Bottom pipe
-      ctx.beginPath();
-      ctx.rect(p.x, p.gapY + p.gapHeight, pipeWidth, H - (p.gapY + p.gapHeight));
-      ctx.fill();
-      ctx.stroke();
+/* adapt UI */
+function adaptUI(){ const isMobile = window.innerWidth <= 480 || ('ontouchstart' in window && window.innerWidth < 768); mobileControls.style.display = isMobile ? 'flex' : 'none'; }
+window.addEventListener('resize', adaptUI);
+adaptUI();
 
-      // Gap highlight / portal
-      ctx.save();
-      const centerX = p.x + pipeWidth / 2;
-      const centerY = p.gapY + p.gapHeight / 2;
-
-      ctx.translate(centerX, centerY);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.beginPath();
-      ctx.rect(-pipeWidth / 2, -p.gapHeight / 2, pipeWidth, p.gapHeight);
-      ctx.fill();
-
-      // Icon bentuk yang diminta
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#000";
-      ctx.fillStyle = "#f1c40f";
-      const iconSize = 24;
-
-      if (p.requiredShape === "circle") {
-        ctx.beginPath();
-        ctx.arc(0, 0, iconSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      } else if (p.requiredShape === "square") {
-        ctx.beginPath();
-        ctx.rect(-iconSize / 2, -iconSize / 2, iconSize, iconSize);
-        ctx.fill();
-        ctx.stroke();
-      } else if (p.requiredShape === "triangle") {
-        ctx.beginPath();
-        ctx.moveTo(-iconSize / 2, iconSize / 2);
-        ctx.lineTo(0, -iconSize / 2);
-        ctx.lineTo(iconSize / 2, iconSize / 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawBackground() {
-      // Ground
-      ctx.fillStyle = "#27ae60";
-      ctx.fillRect(0, H - 60, W, 60);
-      ctx.fillStyle = "#2ecc71";
-      ctx.fillRect(0, H - 55, W, 55);
-
-      // Some clouds
-      ctx.fillStyle = "rgba(255,255,255,0.8)";
-      for (let i = 0; i < 3; i++) {
-        const baseX = (Date.now() / 50 + i * 150) % (W + 100) - 50;
-        const baseY = 80 + i * 60;
-        ctx.beginPath();
-        ctx.arc(baseX, baseY, 25, 0, Math.PI * 2);
-        ctx.arc(baseX + 20, baseY - 10, 20, 0, Math.PI * 2);
-        ctx.arc(baseX - 20, baseY - 10, 20, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
-      drawBackground();
-
-      // Pipes
-      pipes.forEach(drawPipe);
-
-      // Player
-      drawPlayer();
-    }
-
-    // Input: keyboard
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        flap();
-      } else if (e.code === "Digit1") {
-        changeShape(0);
-      } else if (e.code === "Digit2") {
-        changeShape(1);
-      } else if (e.code === "Digit3") {
-        changeShape(2);
-      } else if (e.code === "Enter") {
-        if (gameOver) resetGame();
-      }
-    });
-
-    // Input: mouse / touch
-    canvas.addEventListener("mousedown", flap);
-    canvas.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      flap();
-    });
-
-    // Mulai
-    resetGame();
-    update();
-  </script>
+/* start */
+updatePreview();
+requestAnimationFrame(update);
+</script>
 </body>
 </html>
