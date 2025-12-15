@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>Flappy Shape - Full Features</title>
+  <title>Flappy Si Bentuk Lucu</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -83,14 +83,15 @@
     <canvas id="game"></canvas>
 
     <div id="overlay">
-      <h1 id="titleText">Flappy Shape</h1>
-      <p id="subText">TAP di mana saja untuk mulai — 1/2/3 ganti gambar</p>
+      <h1 id="titleText">Flappy Si Bentuk Lucu</h1>
+      <p id="subText">TAP di mana saja untuk mulai — 1-8 ganti gambar</p>
     </div>
 
     <div id="info">
       <div style="display:flex;flex-direction:column;align-items:flex-start">
         <div>Skor: <span id="scoreText">0</span></div>
         <div class="difficulty-info">Gap: <span id="gapText">-</span> px · Speed: <span id="speedText">-</span></div>
+        <div style="color:#ffd700;font-weight:bold;">🪙 <span id="coinText">0</span></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div>Bentuk:</div>
@@ -103,6 +104,12 @@
       <div class="btn" id="btn1">1</div>
       <div class="btn" id="btn2">2</div>
       <div class="btn" id="btn3">3</div>
+      <div class="btn" id="btn4">4</div>
+      <div class="btn" id="btn5">5</div>
+      <div class="btn" id="btn6">6</div>
+      <div class="btn" id="btn7">7</div>
+      <div class="btn" id="btn8">8</div>
+      <div class="btn" id="btnMute" style="position:absolute;right:14px;top:-60px;">🔊</div>
     </div>
 
   </div>
@@ -115,7 +122,12 @@
 const localImages = {
   circle: 'local/1.jpg',
   square: 'local/2.jpg',
-  triangle: 'local/3.jpg'
+  triangle: 'local/3.jpg',
+  pentagon: 'local/4.jpg',
+  hexagon: 'local/5.jpg',
+  star: 'local/6.jpg',
+  diamond: 'local/7.jpg',
+  heart: 'local/8.jpg'
 };
 
 const difficultyConfig = {
@@ -136,14 +148,24 @@ function svgToDataURL(svg){ return 'data:image/svg+xml;utf8,' + encodeURICompone
 const fallback = {
   circle: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><circle cx='64' cy='64' r='44' fill='#ffe066' stroke='#000' stroke-width='4'/></svg>"),
   square: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect x='28' y='28' width='72' height='72' rx='8' fill='#ff6b6b' stroke='#000' stroke-width='4'/></svg>"),
-  triangle: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 24 L28 100 L100 100 Z' fill='#4ecdc4' stroke='#000' stroke-width='4'/></svg>")
+  triangle: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 24 L28 100 L100 100 Z' fill='#4ecdc4' stroke='#000' stroke-width='4'/></svg>"),
+  pentagon: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 20 L100 48 L85 90 L43 90 L28 48 Z' fill='#a29bfe' stroke='#000' stroke-width='4'/></svg>"),
+  hexagon: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 20 L95 38 L95 74 L64 92 L33 74 L33 38 Z' fill='#fd79a8' stroke='#000' stroke-width='4'/></svg>"),
+  star: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 20 L72 50 L104 50 L78 68 L88 98 L64 80 L40 98 L50 68 L24 50 L56 50 Z' fill='#ffeaa7' stroke='#000' stroke-width='4'/></svg>"),
+  diamond: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 20 L100 64 L64 108 L28 64 Z' fill='#74b9ff' stroke='#000' stroke-width='4'/></svg>"),
+  heart: svgToDataURL("<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><path d='M64 100 C 64 100, 30 70, 30 50 C 30 30, 50 30, 64 45 C 78 30, 98 30, 98 50 C 98 70, 64 100, 64 100 Z' fill='#ff7675' stroke='#000' stroke-width='4'/></svg>")
 };
 
 /* load sprites (2 frame placeholders each; photos duplicated) */
 const sprites = {
   circle: [ new Image(), new Image() ],
   square: [ new Image(), new Image() ],
-  triangle: [ new Image(), new Image() ]
+  triangle: [ new Image(), new Image() ],
+  pentagon: [ new Image(), new Image() ],
+  hexagon: [ new Image(), new Image() ],
+  star: [ new Image(), new Image() ],
+  diamond: [ new Image(), new Image() ],
+  heart: [ new Image(), new Image() ]
 };
 /* attempt load local images, fallback to svg if fail */
 Object.keys(localImages).forEach(shape=>{
@@ -163,10 +185,15 @@ const scoreText = document.getElementById('scoreText');
 const gapText = document.getElementById('gapText');
 const speedText = document.getElementById('speedText');
 const shapePreview = document.getElementById('shapePreview');
+const coinText = document.getElementById('coinText');
+
+function updateCoinDisplay() {
+  if(coinText) coinText.textContent = totalCoins + sessionCoins;
+}
 
 let W = window.innerWidth, H = window.innerHeight;
 canvas.width = W; canvas.height = H;
-const shapes = ['circle','square','triangle'];
+const shapes = ['circle','square','triangle','pentagon','hexagon','star','diamond','heart'];
 
 const player = {
   x: 100,
@@ -182,11 +209,24 @@ let score = 0;
 let pipes = [];
 const pipeWidth = 90;
 
+// Coin system
+let coins = [];
+let sessionCoins = 0;  // coins in current game
+let totalCoins = 0;    // total saved coins
+const coinRadius = 18;
+const coinSpawnChance = 0.4; // 40% chance per pipe
+
 let gameRunning = false;
 let gameOver = false;
 let animTimer = 0;
 let lastAnimTime = performance.now();
 let gameStartTimestamp = null;
+
+// Load saved coins
+try {
+  const saved = localStorage.getItem('flappyShapeCoins');
+  if(saved) totalCoins = parseInt(saved) || 0;
+} catch(e) {}
 
 /* preview update */
 function updatePreview(){
@@ -204,6 +244,80 @@ let bgImageLoaded = false;
 bgImage.onload = ()=>{ bgImageLoaded = true; };
 bgImage.onerror = ()=>{ bgImageLoaded = false; };
 bgImage.src = bgImagePath;
+
+/* ========= AUDIO SYSTEM ========= */
+const audioConfig = {
+  bgMusic: 'local/sounds/bg-music.mp3',
+  flapSound: 'local/sounds/flap.mp3',
+  scoreSound: 'local/sounds/score.mp3',
+  gameOverSound: 'local/sounds/gameover.mp3',
+  coinSound: 'local/sounds/coin.mp3'
+};
+
+let isMuted = false;
+const sounds = {
+  bgMusic: new Audio(),
+  flap: new Audio(),
+  score: new Audio(),
+  gameOver: new Audio(),
+  coin: new Audio()
+};
+
+// Initialize audio
+sounds.bgMusic.src = audioConfig.bgMusic;
+sounds.bgMusic.loop = true;
+sounds.bgMusic.volume = 0.3;
+sounds.flap.src = audioConfig.flapSound;
+sounds.flap.volume = 0.5;
+sounds.score.src = audioConfig.scoreSound;
+sounds.score.volume = 0.6;
+sounds.gameOver.src = audioConfig.gameOverSound;
+sounds.gameOver.volume = 0.7;
+sounds.coin.src = audioConfig.coinSound;
+sounds.coin.volume = 0.5;
+
+// Fallback: create synthetic sounds using Web Audio API
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBeep(frequency, duration, type = 'sine') {
+  if(isMuted) return;
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.frequency.value = frequency;
+  oscillator.type = type;
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playSound(soundName) {
+  if(isMuted) return;
+  const sound = sounds[soundName];
+  if(sound && sound.src && sound.readyState >= 2) {
+    sound.currentTime = 0;
+    sound.play().catch(()=>{});
+  } else {
+    // Fallback synthetic sounds
+    if(soundName === 'flap') playBeep(400, 0.1, 'square');
+    else if(soundName === 'score') playBeep(800, 0.15, 'sine');
+    else if(soundName === 'gameOver') playBeep(200, 0.3, 'sawtooth');
+    else if(soundName === 'coin') playBeep(600, 0.12, 'sine');
+  }
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn = document.getElementById('btnMute');
+  if(btn) btn.textContent = isMuted ? '🔇' : '🔊';
+  if(isMuted) {
+    sounds.bgMusic.pause();
+  } else {
+    if(gameRunning) sounds.bgMusic.play().catch(()=>{});
+  }
+}
 
 
 /* dynamic difficulty calculations */
@@ -230,15 +344,18 @@ function updateDifficultyUI(){
 }
 
 /* spawn pipe using current gap */
-function spawnPipe(){
+function spawnPipe(xOverride){
   const gap = computeCurrentGap();
   const margin = 60;
   const gapY = margin + Math.random()*(H - 2*margin - gap);
-  // add vertical oscillation for moving obstacle
-  const oscAmp = Math.min(70, Math.max(24, Math.floor(H * 0.06))); // amplitude a bit smaller
-  const oscSpeed = 0.0009 + Math.random()*0.0007; // slower oscillation
-  const oscPhase = Math.random() * Math.PI * 2;
-  pipes.push({ x: W + 40, gapY, gapHeight: gap, passed: false, oscAmp, oscSpeed, oscPhase });
+  const spawnX = typeof xOverride === 'number' ? xOverride : (W + 40);
+  pipes.push({ x: spawnX, gapY, gapHeight: gap, passed: false });
+  
+  // Spawn coin with chance
+  if(Math.random() < coinSpawnChance) {
+    const coinY = gapY + gap/2 + (Math.random() - 0.5) * (gap * 0.4);
+    coins.push({ x: spawnX + pipeWidth/2, y: coinY, collected: false, wobble: Math.random() * Math.PI * 2 });
+  }
 }
 
 /* start / flap */
@@ -251,8 +368,20 @@ function flap(){
     gameRunning = true;
     overlay.style.display = 'none';
     gameStartTimestamp = performance.now();
+    // spawn initial obstacles closer to the start
+    pipes.length = 0;
+    coins.length = 0;
+    sessionCoins = 0;
+    updateCoinDisplay();
+    const firstOffset = Math.max(200, Math.min(320, Math.floor(W * 0.4)));
+    spawnPipe(player.x + firstOffset);
+    // optional second pipe a bit further
+    spawnPipe(player.x + firstOffset + computeCurrentSpacing());
+    // Start background music
+    if(!isMuted) sounds.bgMusic.play().catch(()=>{});
   }
   player.vy = player.flapStrength;
+  playSound('flap');
 }
 
 /* random shape (avoid same) */
@@ -271,7 +400,20 @@ function triggerGameOver(){
   overlay.style.display = 'flex';
   overlay.style.opacity = 1;
   document.getElementById('titleText').textContent = 'Game Over';
-  document.getElementById('subText').innerHTML = `Skor kamu: ${score}<br>TAP di mana saja untuk restart`;
+  const coinMsg = sessionCoins > 0 ? `<br>🪙 Koin: +${sessionCoins}` : '';
+  document.getElementById('subText').innerHTML = `Skor kamu: ${score}${coinMsg}<br>TAP di mana saja untuk restart`;
+  playSound('gameOver');
+  sounds.bgMusic.pause();
+  sounds.bgMusic.currentTime = 0;
+  
+  // Save coins to localStorage
+  if(sessionCoins > 0) {
+    totalCoins += sessionCoins;
+    try {
+      localStorage.setItem('flappyShapeCoins', totalCoins.toString());
+    } catch(e) {}
+    updateCoinDisplay();
+  }
 }
 
 function getGroundHeight(){ return Math.max(60, Math.floor(H*0.06)); }
@@ -297,22 +439,34 @@ function update(now){
       spawnPipe();
     }
 
+    // move coins with pipes
+    for(let i = coins.length-1; i>=0; i--){
+      const c = coins[i];
+      c.x -= computeCurrentPipeSpeed();
+      c.wobble += 0.08;
+      
+      // Check collision with player
+      if(!c.collected){
+        const dx = player.x - c.x;
+        const dy = player.y - c.y;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        if(distance < player.radius + coinRadius){
+          c.collected = true;
+          sessionCoins++;
+          updateCoinDisplay();
+          playSound('coin');
+        }
+      }
+      
+      // Remove off-screen coins
+      if(c.x < -50) coins.splice(i, 1);
+    }
+    
     // move pipes with dynamic speed
     const currentSpeed = computeCurrentPipeSpeed();
     for(let i = pipes.length-1; i>=0; i--){
       const p = pipes[i];
       p.x -= currentSpeed;
-
-      // apply vertical oscillation to the gap center
-      const t = now; // ms from rAF time
-      const baseCenter = p.gapY + p.gapHeight/2;
-      const oscOffset = Math.sin(p.oscPhase + t * p.oscSpeed) * p.oscAmp;
-      const newCenter = baseCenter + oscOffset;
-      // clamp so pipes stay within bounds
-      const minCenter = p.gapHeight/2 + 20;
-      const maxCenter = H - getGroundHeight() - p.gapHeight/2 - 20;
-      const clampedCenter = Math.min(Math.max(newCenter, minCenter), maxCenter);
-      p.gapY = clampedCenter - p.gapHeight/2;
 
       const withinX = (player.x + player.radius > p.x) && (player.x - player.radius < p.x + pipeWidth);
       if(withinX){
@@ -324,6 +478,7 @@ function update(now){
             p.passed = true;
             score++;
             scoreText.textContent = score;
+            playSound('score');
 
             // auto-random shape after passing
             player.shape = randomShape();
@@ -369,8 +524,25 @@ function drawBackground(){
   ctx.fillStyle = "#2ecc71";
   ctx.fillRect(0, H-groundHeight+5, W, groundHeight-5);
 
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  // optional clouds removed to let background image show clearly
+  // Natural clouds with multiple circles
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  const cloudSpeed = 0.02;
+  const clouds = [
+    {baseX: 0.1, y: 0.15, circles: [{x:0,y:0,r:35},{x:30,y:-8,r:28},{x:-25,y:-5,r:30},{x:50,y:5,r:25},{x:-10,y:12,r:22}]},
+    {baseX: 0.4, y: 0.25, circles: [{x:0,y:0,r:40},{x:35,y:-10,r:32},{x:-30,y:-8,r:35},{x:60,y:8,r:28},{x:-15,y:15,r:25}]},
+    {baseX: 0.7, y: 0.12, circles: [{x:0,y:0,r:32},{x:28,y:-6,r:26},{x:-22,y:-4,r:28},{x:45,y:6,r:22},{x:-12,y:10,r:20}]}
+  ];
+  
+  clouds.forEach(cloud => {
+    const offsetX = (Date.now() * cloudSpeed + cloud.baseX * W * 3) % (W + 200) - 100;
+    const cloudY = cloud.y * H;
+    ctx.beginPath();
+    cloud.circles.forEach(c => {
+      ctx.moveTo(offsetX + c.x + c.r, cloudY + c.y);
+      ctx.arc(offsetX + c.x, cloudY + c.y, c.r, 0, Math.PI * 2);
+    });
+    ctx.fill();
+  });
 }
 
 function drawPlayer(){
@@ -385,15 +557,27 @@ function drawPlayer(){
     ctx.drawImage(img, -size/2, -size/2, size, size);
   } else {
     // fallback simple shape
-    ctx.fillStyle = player.shape === 'circle' ? '#ffe066' : player.shape === 'square' ? '#ff6b6b' : '#4ecdc4';
+    const colors = {circle:'#ffe066',square:'#ff6b6b',triangle:'#4ecdc4',pentagon:'#a29bfe',hexagon:'#fd79a8',star:'#ffeaa7',diamond:'#74b9ff',heart:'#ff7675'};
+    ctx.fillStyle = colors[player.shape] || '#ffe066';
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
+    const r = player.radius;
     if(player.shape === 'circle'){
-      ctx.beginPath(); ctx.arc(0,0,player.radius,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
     } else if(player.shape === 'square'){
-      const s = player.radius*1.6; ctx.beginPath(); ctx.rect(-s/2,-s/2,s,s); ctx.fill(); ctx.stroke();
-    } else {
-      const s = player.radius*2; ctx.beginPath(); ctx.moveTo(-s/2,s/2); ctx.lineTo(0,-s/2); ctx.lineTo(s/2,s/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      const s = r*1.6; ctx.beginPath(); ctx.rect(-s/2,-s/2,s,s); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'triangle'){
+      const s = r*2; ctx.beginPath(); ctx.moveTo(-s/2,s/2); ctx.lineTo(0,-s/2); ctx.lineTo(s/2,s/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'pentagon'){
+      ctx.beginPath(); for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'hexagon'){
+      ctx.beginPath(); for(let i=0;i<6;i++){const a=i*Math.PI/3; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'star'){
+      ctx.beginPath(); for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2; const d=i%2?r*0.4:r; ctx.lineTo(Math.cos(a)*d,Math.sin(a)*d);} ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'diamond'){
+      ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(r,0); ctx.lineTo(0,r); ctx.lineTo(-r,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if(player.shape === 'heart'){
+      ctx.beginPath(); ctx.moveTo(0,r*0.3); ctx.bezierCurveTo(-r,-r*0.3,-r,-r*0.8,0,-r*0.2); ctx.bezierCurveTo(r,-r*0.8,r,-r*0.3,0,r*0.3); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
   }
 
@@ -411,19 +595,57 @@ function drawPipe(p){
   ctx.restore();
 }
 
+function drawCoin(c){
+  if(c.collected) return;
+  ctx.save();
+  ctx.translate(c.x, c.y + Math.sin(c.wobble) * 5);
+  
+  // Draw coin with gradient
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coinRadius);
+  gradient.addColorStop(0, '#ffd700');
+  gradient.addColorStop(0.7, '#ffed4e');
+  gradient.addColorStop(1, '#daa520');
+  
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, coinRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Outline
+  ctx.strokeStyle = '#daa520';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  
+  // Inner circle
+  ctx.strokeStyle = '#ffed4e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, coinRadius * 0.6, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
 function draw(){
   ctx.clearRect(0,0,W,H);
   drawBackground();
   pipes.forEach(drawPipe);
+  coins.forEach(drawCoin);
   drawPlayer();
 }
 
 /* inputs */
 window.addEventListener('keydown', (e)=>{
   if(e.code === 'Space'){ e.preventDefault(); flap(); }
+  else if(e.code === 'KeyM'){ toggleMute(); }
   else if(e.code === 'Digit1'){ player.shape = 'circle'; updatePreview(); }
   else if(e.code === 'Digit2'){ player.shape = 'square'; updatePreview(); }
   else if(e.code === 'Digit3'){ player.shape = 'triangle'; updatePreview(); }
+  else if(e.code === 'Digit4'){ player.shape = 'pentagon'; updatePreview(); }
+  else if(e.code === 'Digit5'){ player.shape = 'hexagon'; updatePreview(); }
+  else if(e.code === 'Digit6'){ player.shape = 'star'; updatePreview(); }
+  else if(e.code === 'Digit7'){ player.shape = 'diamond'; updatePreview(); }
+  else if(e.code === 'Digit8'){ player.shape = 'heart'; updatePreview(); }
 });
 // Tap/click anywhere to start or restart
 document.addEventListener('mousedown', flap);
@@ -432,19 +654,36 @@ document.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); }, {p
 /* mobile buttons */
 const mobileControls = document.getElementById('mobileControls');
 const btnFlap = document.getElementById('btnFlap');
+const btnMute = document.getElementById('btnMute');
 const btn1 = document.getElementById('btn1');
 const btn2 = document.getElementById('btn2');
 const btn3 = document.getElementById('btn3');
+const btn4 = document.getElementById('btn4');
+const btn5 = document.getElementById('btn5');
+const btn6 = document.getElementById('btn6');
+const btn7 = document.getElementById('btn7');
+const btn8 = document.getElementById('btn8');
 
 btnFlap.addEventListener('click', flap);
+if(btnMute) btnMute.addEventListener('click', toggleMute);
 btn1.addEventListener('click', ()=>{ player.shape='circle'; updatePreview(); });
 btn2.addEventListener('click', ()=>{ player.shape='square'; updatePreview(); });
 btn3.addEventListener('click', ()=>{ player.shape='triangle'; updatePreview(); });
+btn4.addEventListener('click', ()=>{ player.shape='pentagon'; updatePreview(); });
+btn5.addEventListener('click', ()=>{ player.shape='hexagon'; updatePreview(); });
+btn6.addEventListener('click', ()=>{ player.shape='star'; updatePreview(); });
+btn7.addEventListener('click', ()=>{ player.shape='diamond'; updatePreview(); });
+btn8.addEventListener('click', ()=>{ player.shape='heart'; updatePreview(); });
 
 btnFlap.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); }, {passive:false});
 btn1.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='circle'; updatePreview(); }, {passive:false});
 btn2.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='square'; updatePreview(); }, {passive:false});
 btn3.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='triangle'; updatePreview(); }, {passive:false});
+btn4.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='pentagon'; updatePreview(); }, {passive:false});
+btn5.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='hexagon'; updatePreview(); }, {passive:false});
+btn6.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='star'; updatePreview(); }, {passive:false});
+btn7.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='diamond'; updatePreview(); }, {passive:false});
+btn8.addEventListener('touchstart', (e)=>{ e.preventDefault(); player.shape='heart'; updatePreview(); }, {passive:false});
 
 /* adapt UI */
 function adaptUI(){ const isMobile = window.innerWidth <= 480 || ('ontouchstart' in window && window.innerWidth < 768); mobileControls.style.display = isMobile ? 'flex' : 'none'; }
@@ -459,6 +698,7 @@ resizeCanvas();
 
 /* start */
 updatePreview();
+updateCoinDisplay();
 requestAnimationFrame(update);
 </script>
 </body>
