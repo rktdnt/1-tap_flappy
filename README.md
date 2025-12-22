@@ -1,56 +1,64 @@
-# 1-tap fly (Flappy Shape)
+# 1-tap flappy (Flappy Shape)
 
-Permainan arkade berbasis web yang ringan dan adiktif, diinspirasi oleh mekanisme klasik *Flappy Bird*. Pemain harus mengendalikan bentuk geometris yang terbang melewati celah pipa sambil mengumpulkan koin dan beradaptasi dengan tingkat kesulitan yang terus meningkat secara dinamis.
+**1-tap flappy** adalah permainan arkade berbasis web yang ringan dan adiktif, terinspirasi oleh mekanik klasik *Flappy Bird*. Pemain mengendalikan bentuk geometris yang harus melewati celah pipa sambil mengumpulkan koin. Game ini dirancang dengan tingkat kesulitan adaptif yang meningkat seiring berjalannya waktu dan perolehan skor.
 
 ## 🚀 Fitur Utama
 
-* **Mekanik Fisika Responsif**: Kontrol satu ketukan (tap/click) yang halus untuk melompat (flap).
-* **Sistem Bentuk Dinamis**: Terdapat 8 bentuk berbeda (Lingkaran, Kotak, Segitiga, Pentagon, Hexagon, Bintang, Berlian, dan Hati) yang berganti secara otomatis setiap kali melewati pipa.
-* **Kesulitan Adaptif**: Kecepatan pipa, lebar celah (gap), dan jarak antar pipa berubah secara otomatis berdasarkan skor dan durasi permainan.
-* **Sistem Koin & Skor**: Kumpulkan koin di sepanjang jalan untuk meningkatkan saldo koin total yang tersimpan secara lokal di browser (`localStorage`).
-* **Audio Cerdas**: Mendukung musik latar dan efek suara. Jika file audio lokal tidak ditemukan, sistem akan menggunakan *Web Audio API* untuk menghasilkan suara sintetis.
-* **Optimasi Mobile**: UI yang adaptif dengan kontrol tombol khusus untuk perangkat layar sentuh.
-
-## 🛠️ Teknologi yang Digunakan
-
-* **HTML5 Canvas**: Untuk pergerakan grafis dan rendering game.
-* **CSS3**: Untuk tata letak antarmuka (UI) dan efek transisi.
-* **Vanilla JavaScript**: Untuk logika permainan, deteksi tabrakan, dan manajemen data.
+* **Mekanik Fisika Responsif**: Kontrol satu ketukan (tap/klik) yang halus untuk membuat karakter melompat (flap).
+* **Sistem Bentuk Dinamis**: Terdapat 8 bentuk berbeda (Lingkaran, Kotak, Segitiga, Pentagon, Hexagon, Bintang, Berlian, dan Hati). Bentuk karakter akan berganti secara otomatis setiap kali berhasil melewati pipa.
+* **Kesulitan Adaptif**: Kecepatan pipa, lebar celah (*gap*), dan jarak antar pipa berubah secara dinamis berdasarkan skor dan durasi permainan untuk memberikan tantangan yang terus berkembang.
+* **Sistem Koin & Skor**: Kumpulkan koin untuk meningkatkan saldo total yang disimpan secara lokal di browser melalui `localStorage`.
+* **Audio Cerdas**: Mendukung musik latar dan efek suara. Jika file audio lokal tidak tersedia, sistem secara otomatis menggunakan *Web Audio API* untuk menghasilkan suara sintetis (*beep*).
+* **Optimasi Mobile**: Antarmuka yang responsif dengan kontrol khusus untuk perangkat layar sentuh.
 
 ## 🎮 Cara Bermain
 
-1. **Mulai**: Tekan layar atau tombol **Spasi** untuk memulai permainan.
-2. **Terbang**: Ketuk layar atau tekan **Spasi** berulang kali untuk menjaga karakter tetap terbang.
-3. **Ganti Bentuk**: Tekan angka **1-8** pada keyboard atau gunakan tombol kontrol di layar (mobile) untuk mengganti bentuk karakter secara manual.
-4. **Mute**: Tekan tombol **M** untuk mematikan atau menyalakan suara.
-5. **Tujuan**: Lewati celah pipa sebanyak mungkin dan kumpulkan koin sebanyak-banyaknya tanpa menabrak pipa atau jatuh ke tanah.
+1. **Memulai**: Tekan layar, klik mouse, atau tekan tombol **Spasi** untuk memulai.
+2. **Terbang**: Ketuk atau tekan **Spasi** berulang kali untuk menjaga karakter tetap di udara.
+3. **Ganti Bentuk Manual**: Gunakan tombol angka **1-8** pada keyboard atau tombol di layar (pada perangkat mobile) untuk mengganti bentuk karakter secara instan.
+4. **Mute**: Tekan tombol **M** atau ikon suara untuk mematikan/menyalakan audio.
+5. **Tujuan**: Lewati celah pipa sebanyak mungkin dan kumpulkan koin tanpa menabrak pipa atau jatuh ke tanah.
 
-## 📂 Struktur Aset Lokal
+## 🛠️ Teknologi yang Digunakan
 
-Untuk menggunakan aset gambar dan suara kostum, pastikan struktur folder Anda sebagai berikut:
+* **HTML5 Canvas**: Digunakan untuk rendering grafis dan animasi permainan secara *real-time*.
+* **CSS3**: Digunakan untuk tata letak UI, efek transisi, dan responsivitas layar.
+* **Vanilla JavaScript**: Mengatur seluruh logika permainan, deteksi tabrakan, manajemen audio, dan penyimpanan data.
 
-* `/local/bg.jpg` - Gambar latar belakang.
-* `/local/1.jpg` sampai `8.jpg` - Gambar untuk masing-masing bentuk.
-* `/local/sounds/` - Berisi file `bg-music.mp3`, `flap.mp3`, `score.mp3`, `gameover.mp3`, dan `coin.mp3`.
+## 📂 Struktur Aset
 
-*Catatan: Jika aset di atas tidak ada, game akan otomatis menggunakan gambar cadangan (SVG) dan suara beep elektrik.*
+Game ini mencari aset di folder `local/`. Jika tidak ditemukan, sistem akan menggunakan *fallback* berupa SVG dan suara sintetis.
+
+* **Gambar**:
+* `/local/bg.jpg` (Latar belakang)
+* `/local/1.jpg` hingga `8.jpg` (Gambar untuk tiap bentuk)
+
+
+* **Audio**:
+* `/local/sounds/bg-music.mp3`
+* `/local/sounds/flap.mp3`
+* `/local/sounds/score.mp3`
+* `/local/sounds/gameover.mp3`
+* `/local/sounds/coin.mp3`
+
+
 
 ## 🔧 Konfigurasi Kustom
 
-Anda dapat mengubah tingkat kesulitan melalui objek `difficultyConfig` di dalam file `index.html`:
+Anda dapat memodifikasi tingkat kesulitan permainan dengan mengubah objek `difficultyConfig` di dalam file `game.js`:
 
 ```javascript
 const difficultyConfig = {
-  initialGap: 300,           // Lebar celah awal
-  minGap: 200,               // Lebar celah minimal
-  basePipeSpeed: 1.6,        // Kecepatan awal pipa
-  maxPipeSpeed: 4.0,         // Kecepatan maksimal pipa
-  // ... dan pengaturan lainnya
+  initialGap: 300,           // Lebar celah awal antar pipa
+  minGap: 200,               // Lebar celah minimum
+  shrinkPerSecond: 2.0,      // Penyusutan celah per detik
+  basePipeSpeed: 1.2,        // Kecepatan awal pipa
+  maxPipeSpeed: 3.0,         // Kecepatan maksimal pipa
+  // ... (pengaturan lainnya)
 };
 
 ```
 
 ---
 
-**Kontribusi:**
-Silakan lakukan *fork* pada repositori ini dan kirimkan *pull request* jika ingin menambahkan fitur baru atau melakukan perbaikan *bug*.
+**Kontribusi**: Silakan lakukan *fork* pada repositori ini dan kirimkan *pull request* untuk fitur baru atau perbaikan bug.
