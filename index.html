@@ -4,79 +4,7 @@
   <meta charset="utf-8" />
   <title>1-tap fly</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      background:#111;
-      display:block;
-      height:100vh;
-      width:100vw;
-      margin:0;
-      overflow:hidden;
-      font-family:Arial,Helvetica,sans-serif;
-      color:#fff;
-    }
-    #gameContainer{position:fixed; inset:0}
-    canvas{
-      width:100vw;
-      height:100vh;
-      background:#4d9fff; /* will be overridden by drawn image */
-      display:block;
-    }
-    #overlay{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      transition:opacity 200ms ease;
-      pointer-events:none;
-    }
-    #info{
-      position:absolute;
-      top:8px;
-      left:8px;
-      right:8px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      font-size:14px;
-      gap:12px;
-    }
-    .shape-preview{
-      width:30px;
-      height:30px;
-      background-size:cover;
-      background-position:center;
-      border-radius:6px;
-      border:2px solid rgba(0,0,0,0.4);
-    }
-    .mobile-controls{
-      position:absolute;
-      bottom:14px;
-      left:50%;
-      transform:translateX(-50%);
-      display:flex;
-      gap:8px;
-      pointer-events:auto;
-    }
-    .btn{
-      background:rgba(255,255,255,0.12);
-      border:2px solid rgba(255,255,255,0.18);
-      padding:8px 12px;
-      border-radius:10px;
-      color:#fff;
-      font-weight:600;
-      user-select:none;
-      box-shadow:0 6px 18px rgba(0,0,0,0.35);
-    }
-    .btn:active{transform:translateY(2px)}
-    .difficulty-info{font-size:12px;opacity:0.9}
-    .hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:12px;opacity:0.8}
-    @media (max-width:420px){ .shape-preview{width:34px;height:34px} .btn{padding:10px 14px} }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="gameContainer">
@@ -114,12 +42,9 @@
 
   </div>
 
-<script>
-/* ========= CONFIG =========
-   - support foto lokal: sesuaikan path jika perlu
-   - dynamic difficulty values di bawah dapat di-tweak
-*/
-const localImages = {
+  <script src="game.js"></script>
+</body>
+</html>
   circle: 'local/1.jpg',
   square: 'local/2.jpg',
   triangle: 'local/3.jpg',
